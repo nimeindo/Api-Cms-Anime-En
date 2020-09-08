@@ -1,7 +1,7 @@
 
 const env = require("dotenv");
 env.config()
-const MainModels = require('../../models/V1/MainModels')
+const MainModels = require('../../../models/V1/MainModels')
 const promise = require('request-promise');
 const md5 = require('md5');
 const dateTime = require('node-datetime');
