@@ -54,7 +54,7 @@ module.exports = {
     },
 
     ScrapListAnime : function(){
-        try {
+        try { 
             return new Promise((resolve, reject) => {
                 return promise(url).then(function(html){
                     const retunData = [];
@@ -91,15 +91,18 @@ module.exports = {
 
     updateMysql : function(data) {
         try {
+            
             const NumberUpdate = [];
             const NumberSave = [];
             return new Promise((resolve, reject) => {
                 data.forEach(async (element, index, array) => {
+                    console.log(element.slug)
                     const getList = await MainModels.ListAnimeTab.findOne({
                         where: {slug:element.slug}
                     });
+                    
                     if(getList){
-                        const updateList = new MainModels.ListAnimeTab({
+                        const updateList = await MainModels.ListAnimeTab.update({
                             code:element.code,
                             title:element.title,
                             slug:element.slug,
@@ -109,12 +112,12 @@ module.exports = {
                         },{
                             where: {id:getList.id}
                         })
-                        await updateList.update();
+                        await updateList;
                         const LogSave = {
                             "hit_date": element.cron_at,
                             "slug":element.slug,
                             "status": "Success",
-                            "message":"Data Update"
+                            "message":"List Data Update"
                         }
                         console.log(LogSave)
                         NumberUpdate.push(1)
@@ -132,7 +135,7 @@ module.exports = {
                             "hit_date": element.cron_at,
                             "slug":element.slug,
                             "status": "Success",
-                            "message":"Data Save"
+                            "message":"List Data Save"
                         }
                         console.log(LogSave)
                         NumberSave.push(1)
@@ -144,13 +147,15 @@ module.exports = {
                             "ErrorCount" : 0,
                             "Status" : "Complete",
                             "Message": ""
-                        }    
+                        } 
+                        
                         resolve(status);
                     } 
                 });
             });
             
         }catch(err) {
+            
             LogErr = {
                 "SaveCount" : NumberSave.length,
                 "UpdateCount" : NumberUpdate.length,
@@ -158,6 +163,7 @@ module.exports = {
                 "Status": "Not Complete",
                 "Message": err.message
             }
+            console.log(LogErr)
             return LogErr
         }
     },
