@@ -2,6 +2,57 @@ const sequelize = require('sequelize')
 
 const db = require('../../config/dbMysql')
 const TIMESTAMP = require('sequelize-mysql-timestamp')(db);
+const ServerStreamAnimeTb = db.define(
+    "server_stream",
+    {
+        'id': {
+            type: sequelize.INTEGER,
+            autoIncrement: true,
+            primaryKey: true
+        },
+        'id_stream_anime': {
+            type: sequelize.INTEGER,
+        },
+        'code': {type:sequelize.STRING},
+        'name_server':{type:sequelize.STRING},
+        'iframe_src':{type:sequelize.STRING},
+        'cron_at': {type:sequelize.DATE}
+    },
+    {
+        freezeTableName:true
+    }
+);
+
+const StreamAnimeTb = db.define(
+    "stream_anime",
+    {
+        'id': {
+            type: sequelize.INTEGER,
+            autoIncrement: true,
+            primaryKey: true
+        },
+        'id_detail_anime': {
+            type: sequelize.INTEGER,
+        },
+        'id_list_anime': {
+            type: sequelize.INTEGER,
+        },
+        'id_list_episode': {
+            type: sequelize.INTEGER,
+        },
+        'code': {type:sequelize.STRING},
+        'title':{type:sequelize.STRING},
+        'slug':{type:sequelize.STRING},
+        'href_episode': {type:sequelize.TEXT},
+        'next_episode': {type:sequelize.TEXT},
+        'prev_episode': {type:sequelize.TEXT},
+        'cron_at': {type:sequelize.DATE}
+    },
+    {
+        freezeTableName:true
+    }
+);
+
 const EpsAnimeTb = db.define(
     "list_episode",
     {
@@ -103,6 +154,8 @@ const UserTb = db.define(
 
 
 module.exports = {
+    streamTab : StreamAnimeTb,
+    serverStreamTab : ServerStreamAnimeTb,
     listEpslTab : EpsAnimeTb,
     DetailTab : DetailAnimeTb,
     ListAnimeTab : ListAnimeTb,

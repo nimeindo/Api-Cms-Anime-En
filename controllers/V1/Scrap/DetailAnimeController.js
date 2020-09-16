@@ -1,4 +1,3 @@
-
 const env = require("dotenv");
 env.config()
 const MainModels = require('../../../models/V1/MainModels')
@@ -209,7 +208,7 @@ module.exports = {
             res.status(500).send("Server Error");
         }
     },
-    // For Manajemen save data Detal and Data episode from data ScrapDEtailAnime
+    // For Manajemen save data Detail and Data manajemen save episode from data ScrapDEtailAnime
     SaveDataMysql : function(data) {
         try {
             var dataList = [];
@@ -341,84 +340,6 @@ module.exports = {
             return LogErr
         }
     },
-    // for save data and update data list episode
-    saveEpisodeMysql: function(elements){
-        try {
-            const NumberUpdate = [];
-            const NumberSave = [];
-            return new Promise((resolve, reject) => {
-                elements.list_episode.forEach(async (element, index, array) => {
-                    const getEpisd = await MainModels.listEpslTab.findOne({
-                        where: {slug:element.slugEps}
-                    });
-                    const getDetail = await MainModels.DetailTab.findOne({
-                        where: {slug:elements.slug}
-                    });
-                    if(getEpisd){
-                        const updateEps = await MainModels.listEpslTab.update({
-                            id_list_anime : getDetail.id_list_anime,
-                            id_detail_anime : getDetail.id,
-                            code : element.codeEps,
-                            slug : element.slugEps,
-                            episode : element.episode,
-                            href_episode : element.href_episode,
-                            cron_at : elements.cron_at,
-                        },{
-                            where: {id:getEpisd.id}
-                        }) 
-                        await updateEps;
-                        const LogSave = {
-                            "hit_date": elements.cron_at,
-                            "slug":element.slugEps,
-                            "status": "Success",
-                            "message":"Epiode Data Update"
-                        }
-                        NumberUpdate.push(1)
-                        console.log(LogSave)
-                    }else{
-                        const EpsSave = new MainModels.listEpslTab({
-                            id_list_anime : getDetail.id_list_anime,
-                            id_detail_anime : getDetail.id,
-                            code : element.codeEps,
-                            slug : element.slugEps,
-                            episode : element.episode,
-                            href_episode : element.href_episode,
-                            cron_at : elements.cron_at,
-                        })
-                        await EpsSave.save();
-                        const LogSave = {
-                            "hit_date": elements.cron_at,
-                            "slug":element.slugEps,
-                            "status": "Success",
-                            "message":"Epiode Data Save"
-                        }
-                        NumberSave.push(1)
-                        console.log(LogSave)
-                    }
-                    if (index === array.length -1){
-                        const status = {
-                            "SaveCount" : NumberSave.length,
-                            "UpdateCount" : NumberUpdate.length,
-                            "ErrorCount" : 0,
-                            "Status" : "Complete Save Episode",
-                            "Message": ""
-                        } 
-                        
-                        resolve(status);
-                    } 
-                });
-            });
-        }catch(err) {
-            LogErr = {
-                "ErrorCount" : 1,
-                "Status": "Not Complete",
-                "Message": err.message
-            }
-            console.log(LogErr)
-            return LogErr
-        }
-    },
-
     // for save data detail
     SaveDetail: async function(element){
         try{
@@ -505,6 +426,83 @@ module.exports = {
                 return LogSave
             
         }catch(err){
+            LogErr = {
+                "ErrorCount" : 1,
+                "Status": "Not Complete",
+                "Message": err.message
+            }
+            console.log(LogErr)
+            return LogErr
+        }
+    },
+    // for save data and update list episode
+    saveEpisodeMysql: function(elements){
+        try {
+            const NumberUpdate = [];
+            const NumberSave = [];
+            return new Promise((resolve, reject) => {
+                elements.list_episode.forEach(async (element, index, array) => {
+                    const getEpisd = await MainModels.listEpslTab.findOne({
+                        where: {slug:element.slugEps}
+                    });
+                    const getDetail = await MainModels.DetailTab.findOne({
+                        where: {slug:elements.slug}
+                    });
+                    if(getEpisd){
+                        const updateEps = await MainModels.listEpslTab.update({
+                            id_list_anime : getDetail.id_list_anime,
+                            id_detail_anime : getDetail.id,
+                            code : element.codeEps,
+                            slug : element.slugEps,
+                            episode : element.episode,
+                            href_episode : element.hrefEps,
+                            cron_at : elements.cron_at,
+                        },{
+                            where: {id:getEpisd.id}
+                        }) 
+                        await updateEps;
+                        const LogSave = {
+                            "hit_date": elements.cron_at,
+                            "slug":element.slugEps,
+                            "status": "Success",
+                            "message":"Epiode Data Update"
+                        }
+                        NumberUpdate.push(1)
+                        console.log(LogSave)
+                    }else{
+                        const EpsSave = new MainModels.listEpslTab({
+                            id_list_anime : getDetail.id_list_anime,
+                            id_detail_anime : getDetail.id,
+                            code : element.codeEps,
+                            slug : element.slugEps,
+                            episode : element.episode,
+                            href_episode : element.hrefEps,
+                            cron_at : elements.cron_at,
+                        })
+                        await EpsSave.save();
+                        const LogSave = {
+                            "hit_date": elements.cron_at,
+                            "slug":element.slugEps,
+                            "status": "Success",
+                            "message":"Epiode Data Save"
+                        }
+                        NumberSave.push(1)
+                        console.log(LogSave)
+                    }
+                    if (index === array.length -1){
+                        const status = {
+                            "SaveCount" : NumberSave.length,
+                            "UpdateCount" : NumberUpdate.length,
+                            "ErrorCount" : 0,
+                            "Status" : "Complete Save Episode",
+                            "Message": ""
+                        } 
+                        
+                        resolve(status);
+                    } 
+                });
+            });
+        }catch(err) {
             LogErr = {
                 "ErrorCount" : 1,
                 "Status": "Not Complete",
