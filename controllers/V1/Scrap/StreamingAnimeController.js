@@ -1,7 +1,6 @@
 const env = require("dotenv");
 env.config()
 const MainModels = require('../../../models/V1/MainModels')
-const ListAnimeController = require('./ListAnimeController')
 const promise = require('request-promise');
 const md5 = require('md5');
 const dateTime = require('node-datetime');
@@ -19,33 +18,31 @@ module.exports = {
             });
             if(getUser){
                 const URLStream = req.header("URL-EPISODE")
-                
                 if(typeof URLStream !== 'undefined' && URLStream){
                     const scrapStream = module.exports.ScrapStreamAnime(URLStream)
                     scrapStream.then(function(result) {
                         const saveData =  module.exports.SaveDataMysql(result)
                         saveData.then(function(result) {
-                        //     console.log(result)
-                        //     const endTime = new Date();
-                        //     const SpeedTime = (endTime - startTime)/1000; 
-                        //     const Timestamp = moment().format()
-                        //     const ApiResult = {
-                        //         "API_TheMovieRs": {
-                        //             "Version": "N.1",
-                        //             "Timestamp": Timestamp,
-                        //             "NameEnd": "Detail Anime Scrap",
-                        //             "Status": "Complete",
-                        //             "Message": {
-                        //             "Type": "Info",
-                        //             "ShortText": "Success",
-                        //             "Speed": SpeedTime,
-                        //             "Code": 200
-                        //             },
-                        //             "Body": result
-                        //         }
-                        //     }
-                        //     console.log(ApiResult)
-                        //     res.send(ApiResult)
+                            const endTime = new Date();
+                            const SpeedTime = (endTime - startTime)/1000; 
+                            const Timestamp = moment().format()
+                            const ApiResult = {
+                                "API_TheMovieRs": {
+                                    "Version": "N.1",
+                                    "Timestamp": Timestamp,
+                                    "NameEnd": "Streaming Anime Scrap",
+                                    "Status": "Complete",
+                                    "Message": {
+                                    "Type": "Info",
+                                    "ShortText": "Success",
+                                    "Speed": SpeedTime,
+                                    "Code": 200
+                                    },
+                                    "Body": result
+                                }
+                            }
+                            console.log(ApiResult)
+                            res.send(ApiResult)
                         })
                     })
                 }else{
@@ -97,6 +94,7 @@ module.exports = {
                         code : md5(slug),
                         href_episode : href,
                         iframe_src : srcVideo,
+                        name_server : slug + "-server1",
                         cron_at : date_time
                     })
 
@@ -128,16 +126,58 @@ module.exports = {
                             where: {slug:element.slug}
                         });
                         if(getStreaming){
-
+                            await module.exports.UpdateStreaming(element).then(async function(results) {    
+                                await module.exports.SaveServerStreaming(element).then(async function(result) {    
+                                    LogSave = {
+                                        "hit_date": element.cron_at,
+                                        "status": "Success",
+                                        "stream_anime": {
+                                            "SaveCount": results.SaveCount,
+                                            "UpdateCount": results.UpdateCount,
+                                        },
+                                        "Server_stream":{
+                                            "SaveCount": result.SaveCount,
+                                            "UpdateCount": result.UpdateCount,
+                                        },
+                                        "message":"Streaming Data Update"
+                                    }
+                                })
+                            })
                         }else{
-                            
+                            await module.exports.SaveStreaming(element).then(async function(results) {    
+                                await module.exports.SaveServerStreaming(element).then(async function(result) {    
+                                    LogSave = {
+                                        "hit_date": element.cron_at,
+                                        "status": "Success",
+                                        "stream_anime": {
+                                            "SaveCount": results.SaveCount,
+                                            "UpdateCount": results.UpdateCount,
+                                        },
+                                        "Server_stream":{
+                                            "SaveCount": result.SaveCount,
+                                            "UpdateCount": result.UpdateCount,
+                                        },
+                                        "message":"Streaming Data Save"
+                                    }
+                                })
+                            })
                         }
                     }else{
                         console.log("data streming tidak di temukan di tabel episode");
                     }
+                    resolve(LogSave)
                 });
+                
             });
         }catch(err) {
+            LogErr = {
+                "detail": [],
+                'list_episode': [],
+                "ErrorCount" : 1,
+                "Status": "Not Complete",
+                "Message": err.message
+            }
+            return LogErr
         }
     },
 
@@ -146,6 +186,7 @@ module.exports = {
             const getEpisd = await MainModels.listEpslTab.findOne({
                 where: {slug:element.slug}
             });
+            
             const StremingSave = new MainModels.streamTab({
                 id_list_anime : getEpisd.id_list_anime,
                 id_detail_anime : getEpisd.id_detail_anime,
@@ -153,13 +194,15 @@ module.exports = {
                 slug : element.slug,
                 code : element.code,
                 title : element.title,
-                href_episode : element.href_episode,
+                href_episode : element.iframe_src,
                 next_episode : '',
                 prev_episode : '',
                 cron_at : element.cron_at,
             })
             await StremingSave.save();
             const LogSave = {
+                'SaveCount' : 1,
+                'UpdateCount': 0,
                 "hit_date": element.cron_at,
                 "slug":element.slug,
                 "status": "Success",
@@ -171,7 +214,7 @@ module.exports = {
         }catch(err){
             LogErr = {
                 "ErrorCount" : 1,
-                "Status": "Not Complete",
+                "Status": "Not Complete Save Data Streaming",
                 "Message": err.message
             }
             console.log(LogErr)
@@ -190,20 +233,22 @@ module.exports = {
                 slug : element.slug,
                 code : element.code,
                 title : element.title,
-                href_episode : element.href_episode,
+                href_episode : element.iframe_src,
                 next_episode : '',
                 prev_episode : '',
                 cron_at : element.cron_at,
             },
-            {
+            { 
                 where: {id:getStreaming.id}
             })
             await updateStreaming;
             const LogSave = {
+                'SaveCount' : 0,
+                'UpdateCount': 1,
                 "hit_date": element.cron_at,
                 "slug":element.slug,
                 "status": "Success",
-                "message":"Streaming Data Save"
+                "message":"Streaming Data Update"
             }
             console.log(LogSave)
             return LogSave
@@ -211,11 +256,73 @@ module.exports = {
         }catch(err){
             LogErr = {
                 "ErrorCount" : 1,
-                "Status": "Not Complete",
+                "Status": "Not Complete Update Streaming",
                 "Message": err.message
             }
             console.log(LogErr)
             return LogErr
         }
     },
+
+    SaveServerStreaming: async function(element){
+        try{
+            var LogSave = [];
+            const getStreaming = await MainModels.streamTab.findOne({
+                where: {slug:element.slug}
+            });
+            const getServerStreaming = await MainModels.serverStreamTab.findOne({
+                where: {code:md5(element.name_server)}
+            });
+            if(getServerStreaming){
+                const ServerStremingUpdate = await MainModels.serverStreamTab.update({
+                    id_stream_anime : getStreaming.id,
+                    code : md5(element.name_server),
+                    name_server : element.name_server,
+                    iframe_src : element.iframe_src,
+                    cron_at : element.cron_at,
+                },{
+                    where:{id:getServerStreaming.id}
+                }
+                )
+                await ServerStremingUpdate;
+                LogSave = {
+                    'SaveCount' : 0,
+                    'UpdateCount': 1,
+                    "hit_date": element.cron_at,
+                    "slug":element.slug,
+                    "status": "Success",
+                    "message":"Server Streaming Data Update"
+                }
+            }else{
+                const ServerStremingSave = new MainModels.serverStreamTab({
+                    id_stream_anime : getStreaming.id,
+                    code : md5(element.name_server),
+                    name_server : element.name_server,
+                    iframe_src : element.iframe_src,
+                    cron_at : element.cron_at,
+                })
+                await ServerStremingSave.save();
+                LogSave = {
+                    'SaveCount' : 1,
+                    'UpdateCount': 0,
+                    "hit_date": element.cron_at,
+                    "slug":element.slug,
+                    "status": "Success",
+                    "message":"Server Streaming Data Save"
+                }
+            }
+            
+            console.log(LogSave)
+            return LogSave
+        }catch(err){
+            LogErr = {
+                "ErrorCount" : 1,
+                "Status": "Not Complete Save Server Streaming",
+                "Message": err.message
+            }
+            console.log(LogErr)
+            return LogErr
+        }
+    }
+    
 }

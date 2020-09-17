@@ -102,7 +102,7 @@ module.exports = {
                     // Get Score
                     cheerio('.animeDetailRate',bodyContainer).each(function(){
                         score = cheerio(this).find(".animeDetailRate-right").text();
-                        score = score.replace(" ", "")
+                        score = score.replace(/ /g, "")
                         score = score.trim()
                     })
                     // Get Synopsis and Title
@@ -118,8 +118,8 @@ module.exports = {
                             item = cheerio(this).text(); 
                             item = item.substring(item.indexOf(':') + 2);
                             item = item.trim()
-                            key = key.replace(" : ", "")
-                            key = key.replace(" ", "_")
+                            key = key.replace(/:/g, "")
+                            key = key.replace(/ /, "_")
                             key = key.trim()
                             cheerio(this).find("a").each(function(){
                                 valueDetailItem = cheerio(this).text(); 
